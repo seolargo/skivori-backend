@@ -4,9 +4,12 @@ const path = require('path');
 const cors = require('cors');
 const app = express();
 const PORT = 3001;
+const slotRoutes = require('./routes');
 
 app.use(cors());
 app.use(express.json());
+
+app.use('/api/slotRoutes', slotRoutes);
 
 const gamesFilePath = path.join(__dirname, 'mocks', 'game-data.json');
 
