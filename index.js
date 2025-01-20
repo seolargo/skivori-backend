@@ -6,6 +6,7 @@ const morgan = require('morgan'); // Logging middleware
 const helmet = require('helmet'); // Security middleware
 const rateLimit = require('express-rate-limit'); // Rate limiting middleware
 const bodyParser = require('body-parser'); // For parsing JSON payloads
+const NodeCache = require('node-cache'); // In-memory cache
 
 const app = express();
 const PORT = 3001;
@@ -15,7 +16,6 @@ const slotRoutes = require('./routes');
 const gamesFilePath = path.join(__dirname, 'mocks', 'game-data.json');
 
 // --- Middleware ---
-
 // Security middleware
 app.use(helmet()); // Adds HTTP headers to improve security
 
@@ -36,40 +36,81 @@ const limiter = rateLimit({
 });
 app.use(limiter); // Apply rate limiting
 
+// --- Optimizations ---
+
+// In-memory cache with a 5-minute TTL (Time To Live)
+const gameCache = new NodeCache({ stdTTL: 300, checkperiod: 320 }); // Automatically remove stale data
+
+// Preload games into memory
+let cachedGames = null;
+fs.readFile(gamesFilePath, 'utf8', (err, data) => {
+  if (err) {
+    console.error('Error loading game data at startup:', err);
+    process.exit(1); // Exit if the file can't be read
+  }
+  try {
+    cachedGames = JSON.parse(data); // Parse game data and cache it
+    console.log('Game data loaded into memory.');
+  } catch (parseError) {
+    console.error('Error parsing game data at startup:', parseError);
+    process.exit(1); // Exit on invalid game data format
+  }
+});
+
 // --- Endpoints ---
 
 // Slot machine routes
 app.use('/api/slotRoutes', slotRoutes);
 
-// Endpoint to fetch and filter games
+// Endpoint to fetch and filter games with pagination
 app.get('/api/games', (req, res, next) => {
-  const searchQuery = req.query.search || ''; // Get the search query
-
-  fs.readFile(gamesFilePath, 'utf8', (err, data) => {
-    if (err) {
-      console.error('Error reading game data:', err);
-      return res.status(500).json({ error: 'Failed to load game data.' });
+    const searchQuery = (req.query.search || '').toLowerCase().trim(); // Normalize search query
+    const page = parseInt(req.query.page, 10) || 1; // Get the page number from query, default to 1
+    const limit = parseInt(req.query.limit, 10) || 10; // Get the items per page, default to 10
+  
+    // Check in-memory cache
+    const cacheKey = `${searchQuery}-page${page}-limit${limit}`;
+    if (gameCache.has(cacheKey)) {
+      console.log('Cache hit for:', cacheKey);
+      return res.json(gameCache.get(cacheKey)); // Return cached result
     }
-
+  
     try {
-      const games = JSON.parse(data);
-
+      // Use in-memory preloaded games
+      const games = cachedGames;
+  
       // Filter games based on the search query
       const filteredGames = searchQuery
         ? games.filter((game) =>
-            game.title &&
-            game.title.toLowerCase().includes(searchQuery.toLowerCase().trim())
+            game.title && game.title.toLowerCase().includes(searchQuery)
           )
         : games;
-
-      // Return all games and the filtered games
-      return res.status(200).json({ allGames: games, filteredGames });
-    } catch (parseError) {
-      console.error('Error parsing game data:', parseError);
-      next(parseError); // Pass the error to the global error handler
+  
+      // Pagination logic
+      const startIndex = (page - 1) * limit;
+      const endIndex = page * limit;
+      const paginatedGames = filteredGames.slice(startIndex, endIndex);
+  
+      // Cache the paginated result
+      gameCache.set(cacheKey, {
+        total: filteredGames.length, // Total number of filtered items
+        page,
+        limit,
+        paginatedGames,
+      });
+  
+      // Return paginated and filtered results
+      res.status(200).json({
+        total: filteredGames.length, // Total number of filtered items
+        page,
+        limit,
+        paginatedGames,
+      });
+    } catch (error) {
+      console.error('Error processing games:', error);
+      next(error); // Pass the error to the error-handling middleware
     }
   });
-});
 
 // --- Error Handling Middleware ---
 app.use((err, req, res, next) => {

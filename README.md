@@ -84,3 +84,123 @@ Lower Reward Amounts:
 
 Reducing the reward values for combinations can improve profitability while keeping the player experience engaging.
 Let me know if you'd like help tweaking the simulation or analyzing these results further! 🎰
+
+
+
+
+
+
+
+-- Schema Definition
+
+-- Create Games table
+CREATE TABLE Games (
+    game_id SERIAL PRIMARY KEY,
+    game_name VARCHAR(255) NOT NULL,
+    game_type VARCHAR(100) NOT NULL
+);
+
+-- Create Countries table
+CREATE TABLE Countries (
+    country_id SERIAL PRIMARY KEY,
+    country_code CHAR(2) NOT NULL UNIQUE,
+    country_name VARCHAR(255) NOT NULL
+);
+
+-- Create Game_Countries table (many-to-many relationship between Games and Countries)
+CREATE TABLE Game_Countries (
+    game_id INT NOT NULL,
+    country_id INT NOT NULL,
+    PRIMARY KEY (game_id, country_id),
+    FOREIGN KEY (game_id) REFERENCES Games(game_id) ON DELETE CASCADE,
+    FOREIGN KEY (country_id) REFERENCES Countries(country_id) ON DELETE CASCADE
+);
+
+-- Create Players table
+CREATE TABLE Players (
+    player_id SERIAL PRIMARY KEY,
+    player_name VARCHAR(255) NOT NULL,
+    favorite_game_id INT,
+    FOREIGN KEY (favorite_game_id) REFERENCES Games(game_id) ON DELETE SET NULL
+);
+
+-- Create Spins table
+CREATE TABLE Spins (
+    spin_id SERIAL PRIMARY KEY,
+    player_id INT NOT NULL,
+    game_id INT NOT NULL,
+    spin_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    amount_won_or_lost NUMERIC(10, 2) NOT NULL,
+    FOREIGN KEY (player_id) REFERENCES Players(player_id) ON DELETE CASCADE,
+    FOREIGN KEY (game_id) REFERENCES Games(game_id) ON DELETE CASCADE
+);
+
+-- Create Player_Favorite_Games table (many-to-many relationship between Players and Games)
+CREATE TABLE Player_Favorite_Games (
+    player_id INT NOT NULL,
+    game_id INT NOT NULL,
+    PRIMARY KEY (player_id, game_id),
+    FOREIGN KEY (player_id) REFERENCES Players(player_id) ON DELETE CASCADE,
+    FOREIGN KEY (game_id) REFERENCES Games(game_id) ON DELETE CASCADE
+);
+
+-- Sample Data Insertion
+
+-- Insert games
+INSERT INTO Games (game_name, game_type) 
+VALUES 
+    ('Poker', 'Card'),
+    ('Slot Machine', 'Slot');
+
+-- Insert countries
+INSERT INTO Countries (country_code, country_name) 
+VALUES 
+    ('US', 'United States'),
+    ('GB', 'United Kingdom');
+
+-- Associate games with countries
+INSERT INTO Game_Countries (game_id, country_id) 
+VALUES 
+    (1, 1), 
+    (2, 2);
+
+-- Insert players
+INSERT INTO Players (player_name, favorite_game_id) 
+VALUES 
+    ('Alice', 1), 
+    ('Bob', NULL);
+
+-- Insert spins
+INSERT INTO Spins (player_id, game_id, amount_won_or_lost) 
+VALUES 
+    (1, 1, 50.00), 
+    (2, 2, -20.00);
+
+-- Queries
+
+-- Query: Get all spins with player and game details
+SELECT 
+    s.spin_id,
+    p.player_name,
+    g.game_name,
+    s.amount_won_or_lost,
+    s.spin_timestamp
+FROM Spins s
+JOIN Players p ON s.player_id = p.player_id
+JOIN Games g ON s.game_id = g.game_id;
+
+INSERT INTO Player_Favorite_Games (player_id, game_id)
+VALUES (1, 1), (1, 2); -- Add favorite games for player 1
+
+-- Query: Get all favorite games of a specific player
+SELECT 
+    g.game_name
+FROM Games g
+JOIN Player_Favorite_Games pfg ON g.game_id = pfg.game_id
+WHERE pfg.player_id = 1;
+
+-- Query: Check if a player has favorite games
+SELECT 
+    COUNT(*) AS favorite_game_count
+FROM Player_Favorite_Games
+WHERE player_id = 1;
