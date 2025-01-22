@@ -4,11 +4,10 @@ import { CacheModule } from '@nestjs/cache-manager';
 import { ConfigModule } from '@nestjs/config';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
-import { GamesModule } from './modules/games/games.module';
-
-import { APP_INTERCEPTOR } from '@nestjs/core';
-
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
+
+import { GamesModule } from './modules/games/games.module';
 
 // Middleware Imports
 import { LoggerMiddleware } from '@common/middlewares/logger.middleware';
@@ -26,6 +25,13 @@ import { ResponseTransformInterceptor } from '@common/interceptors/response-tran
 import { ErrorHandlingInterceptor } from '@common/interceptors/error-handling.interceptor';
 import { TimeoutInterceptor } from '@common/interceptors/timeout.interceptor';
 import { CachingInterceptor } from '@common/interceptors/caching.interceptor';
+
+// Filter Imports
+import { HttpErrorFilter } from '@common/filters/http-error.filter';
+
+// Guard Imports
+import { AuthGuard } from '@common/guards/auth.guard';
+import { RolesGuard } from '@common/guards/roles.guard';
 
 @Module({
   imports: [
@@ -55,6 +61,23 @@ import { CachingInterceptor } from '@common/interceptors/caching.interceptor';
     GamesModule,
   ],
   providers: [
+    // Register global filters
+    {
+      provide: APP_FILTER,
+      useClass: HttpErrorFilter, // Exception filter
+    },
+    /*
+    // Register global guards
+    {
+      provide: APP_GUARD,
+      useClass: AuthGuard, // Authentication guard
+    },
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard, // Role-based guard
+    },
+    */
+    // Register global interceptors
     {
       provide: APP_INTERCEPTOR,
       useClass: LoggingInterceptor, // Logs execution time
