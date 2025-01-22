@@ -1,3 +1,4 @@
+import compression from 'compression';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 
@@ -10,6 +11,12 @@ async function bootstrap() {
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE', // Allowed HTTP methods
     credentials: true, // Allow cookies and credentials
   });
+
+  // Use compression middleware globally
+  app.use(compression({
+    level: 6, // Compression level (0-9, where 9 is highest compression)
+    threshold: 1024, // Only compress responses larger than 1 KB
+  }));
 
   // Global prefix for API routes
   app.setGlobalPrefix('api');
