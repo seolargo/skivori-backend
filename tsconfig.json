@@ -6,6 +6,10 @@
     "outDir": "./dist",
     "rootDir": "./src",
     "types": ["node", "jest"],
+    "baseUrl": "./",
+    "paths": {
+      "@common/*": ["src/common/*"]
+    },
     "strict": true,
     "moduleResolution": "node",
     "esModuleInterop": true,
