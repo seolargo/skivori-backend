@@ -9,13 +9,21 @@ export class GamesService {
   private cachedGames: any[] = [];
 
   constructor() {
-    const data = fs.readFileSync(this.gamesFilePath, 'utf8');
-    this.cachedGames = JSON.parse(data);
+    try {
+      const data = fs.readFileSync(this.gamesFilePath, 'utf8');
+      this.cachedGames = JSON.parse(data);
+    } catch (error) {
+      console.error('Error reading games file:', error);
+      this.cachedGames = []; // Default to an empty array
+    }
   }
 
-  @UseInterceptors(CacheInterceptor)
+  //@UseInterceptors(CacheInterceptor)
   getGames(searchQuery: string, page: number, limit: number) {
-    const query = searchQuery.toLowerCase().trim();
+    console.log("getGames is called!")
+    const query = (searchQuery || '').toLowerCase().trim();
+
+    console.log("query: ", query);
     const filteredGames = query
       ? this.cachedGames.filter((game) => game.title?.toLowerCase().includes(query))
       : this.cachedGames;
