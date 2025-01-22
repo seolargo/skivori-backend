@@ -3,6 +3,8 @@ import { CacheModule } from '@nestjs/cache-manager';
 import { GamesController } from './games.controller';
 import { GamesService } from './games.service';
 import { JwtModule } from '@nestjs/jwt';
+import { GameListener } from './listeners/game.listener';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 
 @Module({
   imports: [
@@ -14,8 +16,9 @@ import { JwtModule } from '@nestjs/jwt';
       secret: 'your-secret-key', // Replace with a secure key
       signOptions: { expiresIn: '1h' },
     }),
+    EventEmitterModule.forRoot(), // Import EventEmitter locally if not global
   ],
   controllers: [GamesController],
-  providers: [GamesService],
+  providers: [GamesService, GameListener],
 })
 export class GamesModule {}

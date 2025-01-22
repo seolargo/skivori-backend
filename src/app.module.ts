@@ -9,6 +9,8 @@ import { JwtModule } from '@nestjs/jwt';
 
 import { GamesModule } from './modules/games/games.module';
 
+import { EventEmitterModule } from '@nestjs/event-emitter';
+
 // Middleware Imports
 import { LoggerMiddleware } from '@common/middlewares/logger.middleware';
 import { RateLimitMiddleware } from '@common/middlewares/ratelimit.middleware';
@@ -58,6 +60,7 @@ import { RolesGuard } from '@common/guards/roles.guard';
         },
       ],
     }),
+    EventEmitterModule.forRoot(),
     GamesModule,
   ],
   providers: [

@@ -1,4 +1,5 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -8,7 +9,7 @@ export class GamesService implements OnModuleInit {
   private readonly gamesFilePath = path.join(__dirname, '../../../mocks/game-data.json');
   private cachedGames: any[] = [];
 
-  constructor() {
+  constructor(private readonly eventEmitter: EventEmitter2) {
     this.loadGamesFromFile(); // Load games at startup
   }
 
@@ -17,6 +18,7 @@ export class GamesService implements OnModuleInit {
       const data = fs.readFileSync(this.gamesFilePath, 'utf8');
       this.cachedGames = JSON.parse(data);
       this.logger.log('Games data loaded successfully.');
+      this.eventEmitter.emit('cache.refreshed', { count: this.cachedGames.length });
     } catch (error) {
       this.logger.error('Error reading games file:', error);
       this.cachedGames = [];
@@ -33,6 +35,14 @@ export class GamesService implements OnModuleInit {
     const endIndex = page * limit;
     const paginatedGames = filteredGames.slice(startIndex, endIndex);
 
+    // Emit a search event
+    this.eventEmitter.emit('game.search', {
+      query,
+      resultCount: filteredGames.length,
+      page,
+      limit,
+    });
+
     return {
       total: filteredGames.length,
       page,
@@ -41,25 +51,19 @@ export class GamesService implements OnModuleInit {
     };
   }
 
-  // Custom scheduler methods
   onModuleInit() {
     this.startDailyCacheRefresh();
-    this.startLoggingGamesCount();
-    this.logInitialGamesCount();
   }
 
   private startDailyCacheRefresh() {
     const now = new Date();
     const midnight = new Date(now);
-    midnight.setHours(24, 0, 0, 0); // Set to next midnight
+    midnight.setHours(24, 0, 0, 0);
 
     const timeUntilMidnight = midnight.getTime() - now.getTime();
 
-    // Schedule the first refresh at midnight
     setTimeout(() => {
       this.handleDailyCacheRefresh();
-
-      // Schedule subsequent refreshes every 24 hours
       setInterval(() => this.handleDailyCacheRefresh(), 24 * 60 * 60 * 1000);
     }, timeUntilMidnight);
   }
@@ -68,19 +72,5 @@ export class GamesService implements OnModuleInit {
     this.logger.log('Running daily cache refresh...');
     this.loadGamesFromFile();
     this.logger.log('Cache refreshed successfully.');
-  }
-
-  private startLoggingGamesCount() {
-    // Log the games count every 60 seconds
-    setInterval(() => {
-      this.logger.log(`There are currently ${this.cachedGames.length} games in the cache.`);
-    }, 60000);
-  }
-
-  private logInitialGamesCount() {
-    // Log the initial games count 5 seconds after startup
-    setTimeout(() => {
-      this.logger.log(`Initial games count: ${this.cachedGames.length}`);
-    }, 5000);
   }
 }
