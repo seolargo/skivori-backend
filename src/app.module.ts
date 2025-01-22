@@ -122,6 +122,7 @@ export class AppModule implements NestModule {
       .exclude(
         { path: '/', method: RequestMethod.GET }, // Exclude specific routes
         { path: '/games', method: RequestMethod.GET }, // Add other routes to exclude as needed
+        { path: '/games/search', method: RequestMethod.POST }
       )
       .forRoutes('*'); // Apply to all routes
   }

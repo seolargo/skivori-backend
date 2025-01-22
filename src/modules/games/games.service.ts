@@ -1,4 +1,4 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit, Controller, Post, Body } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -72,5 +72,19 @@ export class GamesService implements OnModuleInit {
     this.logger.log('Running daily cache refresh...');
     this.loadGamesFromFile();
     this.logger.log('Cache refreshed successfully.');
+  }
+}
+
+@Controller('games')
+export class GamesController {
+  constructor(private readonly gamesService: GamesService) {}
+
+  @Post('search')
+  searchGames(@Body('searchQuery') searchQuery: string, @Body('page') page: number, @Body('limit') limit: number) {
+    // Provide default values if page or limit are not provided
+    const pageNumber = page || 1;
+    const limitNumber = limit || 10;
+
+    return this.gamesService.getGames(searchQuery, pageNumber, limitNumber);
   }
 }
