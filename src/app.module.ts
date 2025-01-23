@@ -128,7 +128,9 @@ export class AppModule implements NestModule {
         { path: '/games/search', method: RequestMethod.POST },
         { path: '/slot/spin', method: RequestMethod.POST },
         { path: '/slot/simulate', method: RequestMethod.POST },
-        { path: '/slot/monte-carlo', method: RequestMethod.POST }
+        { path: '/slot/monte-carlo', method: RequestMethod.POST },
+        { path: '/slot/reset', method: RequestMethod.POST }
+
       )
       .forRoutes('*'); // Apply to all routes
   }

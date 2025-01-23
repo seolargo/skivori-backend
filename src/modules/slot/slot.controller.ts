@@ -89,4 +89,9 @@ export class SlotController {
       data: simulationResult,
     };
   }
+
+  @Post('reset')
+  resetBalance() {
+    return this.slotService.resetBalance();
+  }
 }
