@@ -3,6 +3,8 @@ import { SlotController } from './slot.controller';
 import { SlotService } from './slot.service';
 
 @Module({
+  imports: [],
+  exports: [],
   controllers: [SlotController],
   providers: [SlotService]
 })

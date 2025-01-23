@@ -35,6 +35,8 @@ import { HttpErrorFilter } from '@common/filters/http-error.filter';
 import { AuthGuard } from '@common/guards/auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
 
+import { SlotModule } from './modules/slot/slot.module';
+
 @Module({
   imports: [
     CacheModule.register({
@@ -60,6 +62,7 @@ import { RolesGuard } from '@common/guards/roles.guard';
         },
       ],
     }),
+    SlotModule,
     EventEmitterModule.forRoot(),
     GamesModule,
   ],
@@ -122,7 +125,10 @@ export class AppModule implements NestModule {
       .exclude(
         { path: '/', method: RequestMethod.GET }, // Exclude specific routes
         { path: '/games', method: RequestMethod.GET }, // Add other routes to exclude as needed
-        { path: '/games/search', method: RequestMethod.POST }
+        { path: '/games/search', method: RequestMethod.POST },
+        { path: '/slot/spin', method: RequestMethod.POST },
+        { path: '/slot/simulate', method: RequestMethod.POST },
+        { path: '/slot/monte-carlo', method: RequestMethod.POST }
       )
       .forRoutes('*'); // Apply to all routes
   }
