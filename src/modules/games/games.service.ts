@@ -10,18 +10,21 @@ export class GamesService implements OnModuleInit {
   private readonly gamesFilePath = path.join(__dirname, '../../../mocks/game-data.json');
   private cachedGames: any[] = [];
   private searchCache = new NodeCache({ stdTTL: 300 }); // Cache with 5-minute TTL
-  private gameIndex: Map<string, any[]> = new Map(); // Searchable index
+  private gameIndex: Record<string, Set<any>> = {}; // Optimized searchable index
 
   constructor(private readonly eventEmitter: EventEmitter2) {
     this.loadGamesFromFile(); // Load games at startup
   }
 
+  /**
+   * Load games data from file
+   */
   private loadGamesFromFile() {
     try {
       const data = fs.readFileSync(this.gamesFilePath, 'utf8');
       this.cachedGames = JSON.parse(data);
       this.buildGameIndex(); // Build index after loading games
-      this.logger.log('Games data loaded successfully.');
+      this.logger.log(`Games data loaded successfully. Total games: ${this.cachedGames.length}`);
       this.eventEmitter.emit('cache.refreshed', { count: this.cachedGames.length });
     } catch (error) {
       this.logger.error('Error reading games file:', error);
@@ -29,77 +32,89 @@ export class GamesService implements OnModuleInit {
     }
   }
 
+  /**
+   * Build an optimized index for games to support efficient search
+   */
   private buildGameIndex() {
-    this.logger.log('Building search index...');
-    this.cachedGames.forEach((game) => {
+    this.logger.log('Building optimized search index...');
+    this.gameIndex = {}; // Reset the previous index
+
+    for (const game of this.cachedGames) {
       const title = game.title?.toLowerCase();
-      if (!title) return;
+      if (!title) continue;
 
       const words = title.split(' ');
-      words.forEach((word: string) => {
-        if (!this.gameIndex.has(word)) {
-          this.gameIndex.set(word, []);
+      for (const word of words) {
+        const normalizedWord = word.trim();
+        if (!this.gameIndex[normalizedWord]) {
+          this.gameIndex[normalizedWord] = new Set();
         }
-        this.gameIndex.get(word)?.push(game);
-      });
-    });
+        this.gameIndex[normalizedWord].add(game);
+      }
+    }
     this.logger.log('Search index built successfully.');
   }
 
+  /**
+   * Retrieve paginated games based on a search query
+   */
   getGames(searchQuery: string, page: number, limit: number): { total: number; page: number; limit: number; paginatedGames: any[] } {
     const cacheKey = `${searchQuery}-${page}-${limit}`;
     const cachedResult = this.searchCache.get(cacheKey);
-  
+
     if (cachedResult) {
       // Cache hit
       this.logger.log(`Cache hit for query: "${searchQuery}"`);
       return cachedResult as { total: number; page: number; limit: number; paginatedGames: any[] };
     }
-  
+
     // Cache miss
     const query = (searchQuery || '').toLowerCase().trim();
-    let filteredGames: any[] = [];
-  
+    let filteredGames: Set<any> = new Set();
+
     if (query) {
-      // Use forEach to iterate over the Map entries (compatible with older targets)
-      this.gameIndex.forEach((games, key) => {
-        if (key.includes(query)) {
-          filteredGames = filteredGames.concat(games);
+      for (const word of query.split(' ')) {
+        if (this.gameIndex[word]) {
+          this.gameIndex[word].forEach((game) => filteredGames.add(game));
         }
-      });
+      }
     } else {
       // If no query, return all games
-      filteredGames = this.cachedGames;
+      filteredGames = new Set(this.cachedGames);
     }
-  
-    // Remove duplicates (if any) caused by multiple matches
-    filteredGames = Array.from(new Set(filteredGames));
-  
+
+    // Convert the Set to an Array for pagination
+    const filteredGamesArray = Array.from(filteredGames);
+
+    // Paginate the results
     const startIndex = (page - 1) * limit;
     const endIndex = page * limit;
-    const paginatedGames = filteredGames.slice(startIndex, endIndex);
-  
+    const paginatedGames = filteredGamesArray.slice(startIndex, endIndex);
+
     const result = {
-      total: filteredGames.length,
+      total: filteredGamesArray.length,
       page,
       limit,
       paginatedGames,
     };
-  
-    // Save result to cache
+
+    // Cache the result for subsequent requests
     this.searchCache.set(cacheKey, result);
-  
-    // Emit a search event
+
+    // Emit an event with the search details
     this.eventEmitter.emit('game.search', {
       query,
-      resultCount: filteredGames.length,
+      resultCount: filteredGamesArray.length,
       page,
       limit,
     });
-  
+
     return result;
   }
 
+  /**
+   * Schedule daily cache refresh
+   */
   onModuleInit() {
     this.startDailyCacheRefresh();
   }
