@@ -11,11 +11,15 @@ export const appConfig = {
   },
   files: {
     // Path to the games data file
-    gamesFilePath: path.join(__dirname, '../../../mocks/game-data.json'), 
+    gamesFilePath: path.join(__dirname, '../../mocks/game-data.json'), 
   },
   schedule: {
     // 24 hours in milliseconds
     cacheRefreshInterval: 24 * 60 * 60 * 1000, 
+  },
+  pagination: {
+    defaultPage: parseInt(process.env.DEFAULT_PAGE || '1', 10), // Default page for pagination
+    defaultLimit: parseInt(process.env.DEFAULT_LIMIT || '10', 10), // Default limit for pagination
   },
   events: {
     // Event emitted after cache refresh
@@ -24,3 +28,5 @@ export const appConfig = {
     gameSearch: 'game.search', 
   },
 };
+
+export default appConfig;

@@ -1,8 +1,8 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import * as fs from 'fs';
-import * as path from 'path';
 import NodeCache from 'node-cache';
+import { appConfig } from '../../config/app.config'; 
 
 /**
  * Service responsible for managing games, including loading games, searching, and caching results.
@@ -11,21 +11,18 @@ import NodeCache from 'node-cache';
 export class GamesService implements OnModuleInit {
   private readonly logger = new Logger(GamesService.name);
 
-  // Path to the games data file
-  private readonly gamesFilePath = path.join(__dirname, '../../../mocks/game-data.json'); 
-
   // Cached list of games
-  private cachedGames: any[] = []; 
+  private cachedGames: any[] = [];
 
-  // Cache for search results with 5-minute TTL
-  private searchCache = new NodeCache({ stdTTL: 300 }); 
+  // Cache for search results with configurable TTL
+  private searchCache = new NodeCache({ stdTTL: appConfig.cache.stdTTL });
 
   // Searchable index for faster querying
-  private gameIndex: Map<string, any[]> = new Map(); 
+  private gameIndex: Map<string, any[]> = new Map();
 
   constructor(private readonly eventEmitter: EventEmitter2) {
     // Load games at startup
-    this.loadGamesFromFile(); 
+    this.loadGamesFromFile();
   }
 
   /**
@@ -35,18 +32,20 @@ export class GamesService implements OnModuleInit {
   private loadGamesFromFile(): void {
     try {
       // Read games data from the file
-      const data = fs.readFileSync(this.gamesFilePath, 'utf8'); 
+      const data = fs.readFileSync(appConfig.files.gamesFilePath, 'utf8');
 
       // Parse the data as JSON
-      this.cachedGames = JSON.parse(data); 
+      this.cachedGames = JSON.parse(data);
 
       // Build the searchable index
-      this.buildGameIndex(); 
+      this.buildGameIndex();
 
       this.logger.log('Games data loaded successfully.');
 
       // Emit an event after loading
-      this.eventEmitter.emit('cache.refreshed', { count: this.cachedGames.length }); 
+      this.eventEmitter.emit(appConfig.events.cacheRefreshed, {
+        count: this.cachedGames.length,
+      });
     } catch (error) {
       this.logger.error('Error reading games file:', error);
 
@@ -65,16 +64,16 @@ export class GamesService implements OnModuleInit {
       if (!title) return;
 
       // Split the title into words
-      const words = title.split(' '); 
+      const words = title.split(' ');
 
       words.forEach((word: string) => {
         if (!this.gameIndex.has(word)) {
           // Initialize an array for the word if it doesn't exist
-          this.gameIndex.set(word, []); 
+          this.gameIndex.set(word, []);
         }
 
         // Add the game to the index for the word
-        this.gameIndex.get(word)?.push(game); 
+        this.gameIndex.get(word)?.push(game);
       });
     });
 
@@ -84,7 +83,7 @@ export class GamesService implements OnModuleInit {
   /**
    * Retrieves paginated games based on a search query.
    * Caches the results for subsequent requests.
-   * 
+   *
    * @param {string} searchQuery - The search query to filter games.
    * @param {number} page - The page number for pagination.
    * @param {number} limit - The number of games per page.
@@ -96,7 +95,7 @@ export class GamesService implements OnModuleInit {
     limit: number
   ): { total: number; page: number; limit: number; paginatedGames: any[] } {
     // Generate a cache key
-    const cacheKey = `${searchQuery}-${page}-${limit}`; 
+    const cacheKey = `${searchQuery}-${page}-${limit}`;
     const cachedResult = this.searchCache.get(cacheKey);
 
     if (cachedResult) {
@@ -118,7 +117,7 @@ export class GamesService implements OnModuleInit {
       });
     } else {
       // Return all games if no query is provided
-      filteredGames = this.cachedGames; 
+      filteredGames = this.cachedGames;
     }
 
     // Remove duplicates and paginate the results
@@ -136,10 +135,15 @@ export class GamesService implements OnModuleInit {
     };
 
     // Cache the result
-    this.searchCache.set(cacheKey, result); 
+    this.searchCache.set(cacheKey, result);
 
     // Emit search event
-    this.eventEmitter.emit('game.search', { query, resultCount: filteredGames.length, page, limit }); 
+    this.eventEmitter.emit(appConfig.events.gameSearch, {
+      query,
+      resultCount: filteredGames.length,
+      page,
+      limit,
+    });
 
     return result;
   }
@@ -165,7 +169,10 @@ export class GamesService implements OnModuleInit {
       this.handleDailyCacheRefresh();
 
       // Repeat every 24 hours
-      setInterval(() => this.handleDailyCacheRefresh(), 24 * 60 * 60 * 1000); 
+      setInterval(
+        () => this.handleDailyCacheRefresh(),
+        appConfig.schedule.cacheRefreshInterval
+      );
     }, timeUntilMidnight);
   }
 

@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { CacheRefreshedEvent, SearchPerformedEvent } from '../events/game.events';
+import { appConfig } from '../../../config/app.config';
 
 /**
  * Listener for handling game-related events.
@@ -10,15 +11,16 @@ export class GameListener {
   private readonly logger = new Logger(GameListener.name);
 
   /**
-   * Handles the `cache.refreshed` event.
+   * Handles the cache refresh event.
    * Triggered when the games cache is refreshed.
    *
    * @param {CacheRefreshedEvent} event - The event payload containing the number of games in the refreshed cache.
    */
-  @OnEvent('cache.refreshed')
+  @OnEvent(appConfig.events.cacheRefreshed)
   handleCacheRefreshedEvent(event: CacheRefreshedEvent) {
     this.logger.log(`Cache refreshed with ${event.count} games.`);
-    // Additional logic: Notify monitoring systems or admins
+
+    // TODO: Notify monitoring systems or admins
   }
 
   /**
@@ -31,11 +33,12 @@ export class GameListener {
    * @property {number} event.page - The page number of the search results.
    * @property {number} event.limit - The limit of results per page.
    */
-  @OnEvent('game.search')
+  @OnEvent(appConfig.events.gameSearch)
   handleSearchPerformedEvent(event: SearchPerformedEvent) {
     this.logger.log(
       `Search performed: query="${event.query}", results=${event.resultCount}, page=${event.page}, limit=${event.limit}`,
     );
-    // Additional logic: Store search analytics in a database
+
+    // TODO: Store search analytics in a database
   }
 }

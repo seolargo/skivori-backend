@@ -3,6 +3,7 @@ import { CacheInterceptor } from '@nestjs/cache-manager';
 import { GamesService } from './games.service';
 import { GetGamesQueryDto } from './dto/get-games-query.dto';
 import { ValidationPipe } from './validation.pipe';
+import { appConfig } from '../../config/app.config';
 
 /**
  * Controller for handling games-related API endpoints.
@@ -30,7 +31,7 @@ export class GamesController {
   getAllGames(
     @Query() query: GetGamesQueryDto,
   ): { total: number; page: number; limit: number; paginatedGames: any[] } {
-    const { search = '', page = 1, limit = 10 } = query;
+    const { search = '', page = appConfig.pagination.defaultPage, limit = appConfig.pagination.defaultLimit } = query;
 
     // Log the action for debugging purposes
     this.logger.log('Fetching all games with default parameters.');
@@ -51,9 +52,9 @@ export class GamesController {
   searchGames(
     @Body() query: GetGamesQueryDto,
   ): { total: number; page: number; limit: number; paginatedGames: any[] } {
-    const { search = '', page = 1, limit = 10 } = query;
+    const { search = '', page = appConfig.pagination.defaultPage, limit = appConfig.pagination.defaultLimit } = query;
 
-    // Log the query parameters for debugging
+    // Log the query parameters for debugging purposes
     this.logger.log(`Search: ${search}, Page: ${page}, Limit: ${limit}`);
 
     // Fetch and return games matching the search criteria
