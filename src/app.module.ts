@@ -30,6 +30,7 @@ import { CachingInterceptor } from '@common/interceptors/caching.interceptor';
 
 // Filter Imports
 import { HttpErrorFilter } from '@common/filters/http-error.filter';
+import { AllExceptionsFilter } from '@common/filters/all-exceptions.filter';
 
 // Guard Imports
 import { AuthGuard } from '@common/guards/auth.guard';
@@ -104,6 +105,14 @@ import { SlotModule } from './modules/slot/slot.module';
       provide: APP_INTERCEPTOR,
       useClass: CachingInterceptor, // Implements caching
     },
+    {
+      provide: APP_FILTER,
+      useClass: AllExceptionsFilter,
+    },
+    {
+      provide: APP_FILTER,
+      useClass: HttpErrorFilter,
+    },
   ],
   controllers: [],
   exports: [JwtModule]
@@ -130,7 +139,6 @@ export class AppModule implements NestModule {
         { path: '/slot/simulate', method: RequestMethod.POST },
         { path: '/slot/monte-carlo', method: RequestMethod.POST },
         { path: '/slot/reset', method: RequestMethod.POST }
-
       )
       .forRoutes('*'); // Apply to all routes
   }
