@@ -4,17 +4,24 @@ import * as fs from 'fs';
 import * as path from 'path';
 import NodeCache from 'node-cache';
 
+/**
+ * Service responsible for managing games, including loading games, searching, and caching results.
+ */
 @Injectable()
 export class GamesService implements OnModuleInit {
   private readonly logger = new Logger(GamesService.name);
-  private readonly gamesFilePath = path.join(__dirname, '../../../mocks/game-data.json');
-  private cachedGames: any[] = [];
 
-  // Cache with 5-minute TTL
+  // Path to the games data file
+  private readonly gamesFilePath = path.join(__dirname, '../../../mocks/game-data.json'); 
+
+  // Cached list of games
+  private cachedGames: any[] = []; 
+
+  // Cache for search results with 5-minute TTL
   private searchCache = new NodeCache({ stdTTL: 300 }); 
-  
-  // Optimized searchable index
-  private gameIndex: Record<string, Set<any>> = {}; 
+
+  // Searchable index for faster querying
+  private gameIndex: Map<string, any[]> = new Map(); 
 
   constructor(private readonly eventEmitter: EventEmitter2) {
     // Load games at startup
@@ -22,137 +29,132 @@ export class GamesService implements OnModuleInit {
   }
 
   /**
-   * Loads games data from the specified JSON file.
-   * Parses the file content and initializes the cached games and search index.
-   * Emits an event when the data is successfully loaded.
-   *
-   * @private
+   * Loads the games data from a JSON file and builds a searchable index.
+   * Emits an event after loading the data.
    */
-  private loadGamesFromFile() {
+  private loadGamesFromFile(): void {
     try {
-      const data = fs.readFileSync(this.gamesFilePath, 'utf8');
-      this.cachedGames = JSON.parse(data);
+      // Read games data from the file
+      const data = fs.readFileSync(this.gamesFilePath, 'utf8'); 
 
-      // Build index after loading games
+      // Parse the data as JSON
+      this.cachedGames = JSON.parse(data); 
+
+      // Build the searchable index
       this.buildGameIndex(); 
 
-      this.logger.log(`Games data loaded successfully. Total games: ${this.cachedGames.length}`);
+      this.logger.log('Games data loaded successfully.');
 
-      this.eventEmitter.emit('cache.refreshed', { count: this.cachedGames.length });
+      // Emit an event after loading
+      this.eventEmitter.emit('cache.refreshed', { count: this.cachedGames.length }); 
     } catch (error) {
       this.logger.error('Error reading games file:', error);
+
       this.cachedGames = [];
     }
   }
 
   /**
-   * Builds a search index from the cached games.
-   * The index maps each word in the game titles to the corresponding game objects.
-   *
-   * @private
+   * Builds a searchable index from the loaded games data for efficient querying.
    */
-  private buildGameIndex() {
-    this.logger.log('Building optimized search index...');
+  private buildGameIndex(): void {
+    this.logger.log('Building search index...');
 
-    // Reset the previous index
-    this.gameIndex = {}; 
-
-    for (const game of this.cachedGames) {
+    this.cachedGames.forEach((game) => {
       const title = game.title?.toLowerCase();
-      if (!title) continue;
+      if (!title) return;
 
-      const words = title.split(' ');
-      for (const word of words) {
-        const normalizedWord = word.trim();
+      // Split the title into words
+      const words = title.split(' '); 
 
-        if (!this.gameIndex[normalizedWord]) {
-          this.gameIndex[normalizedWord] = new Set();
+      words.forEach((word: string) => {
+        if (!this.gameIndex.has(word)) {
+          // Initialize an array for the word if it doesn't exist
+          this.gameIndex.set(word, []); 
         }
 
-        this.gameIndex[normalizedWord].add(game);
-      }
-    }
+        // Add the game to the index for the word
+        this.gameIndex.get(word)?.push(game); 
+      });
+    });
+
     this.logger.log('Search index built successfully.');
   }
 
   /**
-   * Retrieves paginated games based on the provided search query.
-   * If the result is cached, it returns the cached value. Otherwise, it performs a search, caches the result, and returns it.
-   *
+   * Retrieves paginated games based on a search query.
+   * Caches the results for subsequent requests.
+   * 
    * @param {string} searchQuery - The search query to filter games.
-   * @param {number} page - The current page number for pagination.
-   * @param {number} limit - The number of items per page.
-   * @returns {{ total: number; page: number; limit: number; paginatedGames: any[] }} - Paginated games and metadata.
+   * @param {number} page - The page number for pagination.
+   * @param {number} limit - The number of games per page.
+   * @returns {{ total: number; page: number; limit: number; paginatedGames: any[] }} An object containing the total games, current page, limit, and paginated games.
    */
-  getGames(searchQuery: string, page: number, limit: number): { total: number; page: number; limit: number; paginatedGames: any[] } {
-    const cacheKey = `${searchQuery}-${page}-${limit}`;
+  getGames(
+    searchQuery: string,
+    page: number,
+    limit: number
+  ): { total: number; page: number; limit: number; paginatedGames: any[] } {
+    // Generate a cache key
+    const cacheKey = `${searchQuery}-${page}-${limit}`; 
     const cachedResult = this.searchCache.get(cacheKey);
 
     if (cachedResult) {
-      // Cache hit
       this.logger.log(`Cache hit for query: "${searchQuery}"`);
 
       return cachedResult as { total: number; page: number; limit: number; paginatedGames: any[] };
     }
 
-    // Cache miss
+    // Process the search query
     const query = (searchQuery || '').toLowerCase().trim();
-    let filteredGames: Set<any> = new Set();
+    let filteredGames: any[] = [];
 
     if (query) {
-      for (const word of query.split(' ')) {
-        if (this.gameIndex[word]) {
-          this.gameIndex[word].forEach((game) => filteredGames.add(game));
+      // Search in the index
+      this.gameIndex.forEach((games, key) => {
+        if (key.includes(query)) {
+          filteredGames = filteredGames.concat(games);
         }
-      }
+      });
     } else {
-      // If no query, return all games
-      filteredGames = new Set(this.cachedGames);
+      // Return all games if no query is provided
+      filteredGames = this.cachedGames; 
     }
 
-    // Convert the Set to an Array for pagination
-    const filteredGamesArray = Array.from(filteredGames);
+    // Remove duplicates and paginate the results
+    filteredGames = Array.from(new Set(filteredGames));
 
-    // Paginate the results
     const startIndex = (page - 1) * limit;
     const endIndex = page * limit;
-    const paginatedGames = filteredGamesArray.slice(startIndex, endIndex);
+    const paginatedGames = filteredGames.slice(startIndex, endIndex);
 
     const result = {
-      total: filteredGamesArray.length,
+      total: filteredGames.length,
       page,
       limit,
       paginatedGames,
     };
 
-    // Cache the result for subsequent requests
-    this.searchCache.set(cacheKey, result);
+    // Cache the result
+    this.searchCache.set(cacheKey, result); 
 
-    // Emit an event with the search details
-    this.eventEmitter.emit('game.search', {
-      query,
-      resultCount: filteredGamesArray.length,
-      page,
-      limit,
-    });
+    // Emit search event
+    this.eventEmitter.emit('game.search', { query, resultCount: filteredGames.length, page, limit }); 
 
     return result;
   }
 
   /**
-   * Called when the module is initialized.
-   * Schedules a daily cache refresh.
+   * Lifecycle hook called on module initialization to schedule a daily cache refresh.
    */
-  onModuleInit() {
+  onModuleInit(): void {
     this.startDailyCacheRefresh();
   }
 
   /**
-   * Schedules a daily cache refresh to reload games data and rebuild the index.
-   *
-   * @private
+   * Schedules a daily cache refresh at midnight.
    */
-  private startDailyCacheRefresh() {
+  private startDailyCacheRefresh(): void {
     const now = new Date();
     const midnight = new Date(now);
     midnight.setHours(24, 0, 0, 0);
@@ -162,21 +164,17 @@ export class GamesService implements OnModuleInit {
     setTimeout(() => {
       this.handleDailyCacheRefresh();
 
-      setInterval(() => this.handleDailyCacheRefresh(), 24 * 60 * 60 * 1000);
+      // Repeat every 24 hours
+      setInterval(() => this.handleDailyCacheRefresh(), 24 * 60 * 60 * 1000); 
     }, timeUntilMidnight);
   }
 
   /**
-   * Handles the daily cache refresh process.
-   * Reloads the games data and rebuilds the search index.
-   *
-   * @private
+   * Refreshes the cache by reloading the games data from the file.
    */
-  private handleDailyCacheRefresh() {
+  private handleDailyCacheRefresh(): void {
     this.logger.log('Running daily cache refresh...');
-
     this.loadGamesFromFile();
-    
     this.logger.log('Cache refreshed successfully.');
   }
 }
