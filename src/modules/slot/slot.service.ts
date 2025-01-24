@@ -1,5 +1,4 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
-import { SlotInterface } from './interfaces/interfaces';
 
 /**
  * Service for managing slot machine operations, including spins, balance management,
@@ -47,9 +46,17 @@ export class SlotService {
   private calculateReward(result: string[]): number {
     let reward = 0;
 
-    if (result[0] === result[1] && result[1] === result[2]) {
+    // Possible winning combinations:
+    // Lemon, lemon, lemon
+    // Cherry, cherry, lemon
+
+    if (
+      (result[0] === result[1]) && (result[1] === result[2])
+    ) {
       reward = this.rewards[`3${result[0]}`] || 0;
-    } else if (result[0] === result[1]) {
+    } else if (
+      result[0] === result[1]
+    ) {
       reward = this.rewards[`2${result[0]}`] || 0;
     }
 
@@ -81,16 +88,29 @@ export class SlotService {
       throw new HttpException('Insufficient balance to spin!', HttpStatus.BAD_REQUEST);
     }
 
+    // Define the cost of a single spin
     const spinCost = 1;
+
+    // Deduct the spin cost from the user's balance
     this.userBalance -= spinCost;
+
+    // Generate the result of spinning the reels
     const spinResult = this.spinReels();
+
+    // Calculate the reward based on the spin result
     const reward = this.calculateReward(spinResult);
+
+    // Add the reward to the user's balance
     this.userBalance += reward;
 
+    // Return the spin result, reward, and updated balance to the caller
     return {
-      spinResult,
-      reward,
-      updatedBalance: this.userBalance,
+      // The outcome of the spin
+      spinResult, 
+      // The reward earned from the spin
+      reward, 
+      // The user's balance after the spin
+      updatedBalance: this.userBalance, 
     };
   }
 
@@ -102,31 +122,45 @@ export class SlotService {
    * @returns {object} The final balance and details of each spin.
    */
   public simulateSpins(numSpins: number, startingBalance: number) {
+    // Initialize the user's balance with the starting balance.
     let balance = startingBalance;
-    const spinResults: SlotInterface[] = [];
+  
+    // Create an array to store the results of each spin.
+    const spinResults = [];
+  
+    // Iterate for the number of spins or until the balance is depleted.
+    for (let i = 1; i <= numSpins && balance > 0; i++) {
+      // Deduct the cost of the spin.
+      balance--; 
+      
+      // Get the spin result by spinning the reels.
+      const spinResult = this.spinReels(); 
 
-    for (let i = 1; i <= numSpins; i++) {
-      balance--;
+      // Calculate the reward based on the spin result.
+      const reward = this.calculateReward(spinResult); 
 
-      const spinResult = this.spinReels();
-      const reward = this.calculateReward(spinResult);
-      balance += reward;
-
+      // Add the reward to the balance.
+      balance += reward; 
+  
+      // Add the current spin's details to the results array.
       spinResults.push({
-        spinNumber: i,
-        result: spinResult,
-        reward,
-        balance,
+        // The current spin number.
+        spinNumber: i, 
+        // The result of the spin (symbols on the reels).
+        result: spinResult, 
+        // The reward earned from the spin.
+        reward, 
+        // The updated balance after the spin.
+        balance, 
       });
-
-      if (balance <= 0) {
-        break;
-      }
     }
-
+  
+    // Return the final balance and all the spin results after the simulation.
     return {
-      finalBalance: balance,
-      spinResults,
+      // The user's remaining balance after all spins.
+      finalBalance: balance, 
+      // Array of all spin results.
+      spinResults, 
     };
   }
 
@@ -144,48 +178,65 @@ export class SlotService {
     numSpins: number, 
     startingBalance: number
   ) {
-    let totalReward = 0;
-    let totalSpins = 0;
-    let bankruptcies = 0;
+    // Tracks the total rewards earned across all trials.
+    let totalReward = 0; 
+    // Tracks the total number of spins performed across all trials.
+    let totalSpins = 0; 
+    // Tracks the number of trials where the balance was exhausted.
+    let bankruptcies = 0; 
 
-    const rewardDistribution: { [key: number]: number } = {};
+    // Tracks the distribution of rewards (e.g., how many times each reward amount was won).
+    const rewardDistribution: Record<number, number> = {};
 
-    for (let trial = 1; trial <= numTrials; trial++) {
-      let balance = startingBalance;
-      let spins = 0;
+    // Loop through each trial.
+    for (let trial = 0; trial < numTrials; trial++) {
+      // Initialize the balance for the current trial.
+      let balance = startingBalance; 
 
-      for (let i = 1; i <= numSpins; i++) {
-        if (balance <= 0) {
-          bankruptcies++;
-          break;
-        }
+      // Initialize the spin count for the current trial.
+      let spins = 0; 
 
-        spins++;
-        balance--;
+      // Perform spins until the balance is exhausted or the maximum spins are reached.
+      while (spins < numSpins && balance > 0) {
+        // Increment the spin counter.
+        spins++; 
+        // Deduct the spin cost from the balance.
+        balance--; 
 
-        const spinResult = this.spinReels();
-        const reward = this.calculateReward(spinResult);
+        // Calculate the reward for the spin and update the balance.
+        const reward = this.calculateReward(this.spinReels());
         balance += reward;
-        totalReward += reward;
 
+        // Add the reward to the total rewards across all trials.
+        totalReward += reward; 
+
+        // Update the reward distribution if a reward was earned.
         if (reward > 0) {
           rewardDistribution[reward] = (rewardDistribution[reward] || 0) + 1;
         }
       }
 
-      totalSpins += spins;
+      // Add the spins from the current trial to the total spins.
+      totalSpins += spins; 
+
+      // If the balance is exhausted, increment the bankruptcy count.
+      if (balance <= 0) {
+        bankruptcies++;
+      }
     }
 
-    const averageRewardPerSpin = totalReward / totalSpins;
-    const averageSpinsPerTrial = totalSpins / numTrials;
-    const bankruptcyRate = bankruptcies / numTrials;
-
+    // Calculate and return the simulation results.
     return {
-      totalTrials: numTrials,
-      averageRewardPerSpin: parseFloat(averageRewardPerSpin.toFixed(2)),
-      averageSpinsPerTrial: parseFloat(averageSpinsPerTrial.toFixed(2)),
-      bankruptcyRate: parseFloat((bankruptcyRate * 100).toFixed(2)),
-      rewardDistribution,
+      // Total number of trials.
+      totalTrials: numTrials, 
+      // Average reward earned per spin.
+      averageRewardPerSpin: +(totalReward / totalSpins).toFixed(2), 
+      // Average number of spins performed per trial.
+      averageSpinsPerTrial: +(totalSpins / numTrials).toFixed(2), 
+      // Percentage of trials that ended in bankruptcy.
+      bankruptcyRate: +((bankruptcies / numTrials) * 100).toFixed(2), 
+      // Distribution of rewards earned.
+      rewardDistribution, 
     };
-  }
+};
 }

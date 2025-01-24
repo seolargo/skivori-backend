@@ -44,7 +44,7 @@ export class SlotController {
     @Body(appConfig.slotRoutes.numSpins) numSpins: number, 
     @Body(appConfig.slotRoutes.startingBalance) startingBalance: number
   ) {
-    if (!numSpins || !startingBalance || startingBalance <= 0 || numSpins <= 0) {
+    if (!(numSpins > 0 && startingBalance > 0)) {
       return {
         success: false,
         message: 'Invalid input. Please provide a positive number of spins and starting balance.',
@@ -73,7 +73,9 @@ export class SlotController {
     @Body(appConfig.slotRoutes.numSpins) numSpins: number,
     @Body(appConfig.slotRoutes.startingBalance) startingBalance: number,
   ) {
-    if (!numTrials || !numSpins || !startingBalance || numTrials <= 0 || numSpins <= 0 || startingBalance <= 0) {
+    if (
+      !(numTrials > 0 && numSpins > 0 && startingBalance > 0)
+    ) {
       return {
         success: false,
         message: 'Invalid input. Please provide positive values for numTrials, numSpins, and startingBalance.',

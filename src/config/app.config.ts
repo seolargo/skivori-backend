@@ -7,11 +7,17 @@ dotenv.config();
 export const appConfig = {
   cache: {
     // Cache TTL in seconds (default: 300)
-    stdTTL: parseInt(process.env.CACHE_TTL || '300', 10), 
+    stdTTL: parseInt(
+      process.env.CACHE_TTL || '300', 
+      10
+    ), 
   },
   files: {
     // Path to the games data file
-    gamesFilePath: path.join(__dirname, '../../mocks/game-data.json'), 
+    gamesFilePath: path.join(
+      __dirname, 
+      '../../mocks/game-data.json'
+    ), 
   },
   schedule: {
     // 24 hours in milliseconds
@@ -37,9 +43,15 @@ export const appConfig = {
   },
   pagination: {
     // Default page for pagination
-    defaultPage: parseInt(process.env.DEFAULT_PAGE || '1', 10), 
+    defaultPage: parseInt(
+      process.env.DEFAULT_PAGE || '1', 
+      10
+    ), 
     // Default limit for pagination
-    defaultLimit: parseInt(process.env.DEFAULT_LIMIT || '10', 10), 
+    defaultLimit: parseInt(
+      process.env.DEFAULT_LIMIT || '10', 
+      10
+    ), 
   },
   events: {
     // Event emitted after cache refresh
