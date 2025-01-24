@@ -3,6 +3,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import * as fs from 'fs';
 import NodeCache from 'node-cache';
 import { appConfig } from '../../config/app.config'; 
+import { GetGamesResult } from './interfaces/interfaces';
 
 /**
  * Service responsible for managing games, including loading games, searching, and caching results.
@@ -43,9 +44,12 @@ export class GamesService implements OnModuleInit {
       this.logger.log('Games data loaded successfully.');
 
       // Emit an event after loading
-      this.eventEmitter.emit(appConfig.events.cacheRefreshed, {
-        count: this.cachedGames.length,
-      });
+      this.eventEmitter.emit(
+        appConfig.events.cacheRefreshed, 
+        {
+          count: this.cachedGames.length,
+        }
+      );
     } catch (error) {
       this.logger.error('Error reading games file:', error);
 
@@ -59,25 +63,45 @@ export class GamesService implements OnModuleInit {
   private buildGameIndex(): void {
     this.logger.log('Building search index...');
 
-    this.cachedGames.forEach((game) => {
-      const title = game.title?.toLowerCase();
-      if (!title) return;
+    this.cachedGames
+      .forEach((game) => {
+        const title = game.title?.toLowerCase();
+        if (!title) return;
 
-      // Split the title into words
-      const words = title.split(' ');
+        // Split the title into words
+        const words = title.split(' ');
 
-      words.forEach((word: string) => {
-        if (!this.gameIndex.has(word)) {
-          // Initialize an array for the word if it doesn't exist
-          this.gameIndex.set(word, []);
-        }
-
-        // Add the game to the index for the word
-        this.gameIndex.get(word)?.push(game);
-      });
+        this.addGameToIndex(
+          words, 
+          this.gameIndex, 
+          game
+        );
     });
 
     this.logger.log('Search index built successfully.');
+  }
+
+  /**
+   * Adds a game to the index by splitting its title into individual words.
+   *
+   * @param {string[]} words - An array of words to be used as keys in the index.
+   * @param {Map<string, any[]>} gameIndex - The index where games are stored based on their keywords.
+   * @param {any} game - The game object to be indexed.
+  */
+  addGameToIndex(
+    words: string[], 
+    gameIndex: Map<string, any[]>, 
+    game: any
+  ): void {
+    words.forEach((word: string) => {
+      if (!gameIndex.has(word)) {
+        // Initialize an array for the word if it doesn't exist
+        gameIndex.set(word, []);
+      }
+
+      // Add the game to the index for the word
+      gameIndex.get(word)?.push(game);
+    });
   }
 
   /**
@@ -87,13 +111,13 @@ export class GamesService implements OnModuleInit {
    * @param {string} searchQuery - The search query to filter games.
    * @param {number} page - The page number for pagination.
    * @param {number} limit - The number of games per page.
-   * @returns {{ total: number; page: number; limit: number; paginatedGames: any[] }} An object containing the total games, current page, limit, and paginated games.
+   * @returns {GetGamesResult} An object containing the total games, current page, limit, and paginated games.
    */
   getGames(
     searchQuery: string,
     page: number,
     limit: number
-  ): { total: number; page: number; limit: number; paginatedGames: any[] } {
+  ): GetGamesResult {
     // Generate a cache key
     const cacheKey = `${searchQuery}-${page}-${limit}`;
     const cachedResult = this.searchCache.get(cacheKey);
@@ -101,7 +125,7 @@ export class GamesService implements OnModuleInit {
     if (cachedResult) {
       this.logger.log(`Cache hit for query: "${searchQuery}"`);
 
-      return cachedResult as { total: number; page: number; limit: number; paginatedGames: any[] };
+      return cachedResult as GetGamesResult;
     }
 
     // Process the search query
@@ -109,14 +133,8 @@ export class GamesService implements OnModuleInit {
     let filteredGames: any[] = [];
 
     if (query) {
-      // Search in the index
-      this.gameIndex.forEach((games, key) => {
-        if (key.includes(query)) {
-          filteredGames = filteredGames.concat(games);
-        }
-      });
+      filteredGames = this.filterGamesFromIndex(query, this.gameIndex);
     } else {
-      // Return all games if no query is provided
       filteredGames = this.cachedGames;
     }
 
@@ -138,14 +156,36 @@ export class GamesService implements OnModuleInit {
     this.searchCache.set(cacheKey, result);
 
     // Emit search event
-    this.eventEmitter.emit(appConfig.events.gameSearch, {
-      query,
-      resultCount: filteredGames.length,
-      page,
-      limit,
-    });
+    this.eventEmitter.emit(
+      appConfig.events.gameSearch, 
+      {
+        query,
+        resultCount: filteredGames.length,
+        page,
+        limit,
+      }
+    );
 
     return result;
+  }
+
+  /**
+   * Filters games from the index based on the query string.
+   *
+   * @param {string} query - The search query string.
+   * @param {Map<string, any[]>} gameIndex - The index containing game keywords mapped to game arrays.
+   * @returns {any[]} - The filtered list of games matching the query.
+   */
+  filterGamesFromIndex(query: string, gameIndex: Map<string, any[]>): any[] {
+    let filteredGames: any[] = [];
+    
+    gameIndex.forEach((games, key) => {
+      if (key.includes(query)) {
+        filteredGames = filteredGames.concat(games);
+      }
+    });
+
+    return filteredGames;
   }
 
   /**
@@ -181,7 +221,9 @@ export class GamesService implements OnModuleInit {
    */
   private handleDailyCacheRefresh(): void {
     this.logger.log('Running daily cache refresh...');
+
     this.loadGamesFromFile();
+
     this.logger.log('Cache refreshed successfully.');
   }
 }

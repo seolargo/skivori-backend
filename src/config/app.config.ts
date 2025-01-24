@@ -26,7 +26,14 @@ export const appConfig = {
     monteCarlo: 'monte-carlo', 
     // Route for resetting the balance
     reset: 'reset', 
-    slot: 'slot'
+    slot: 'slot',
+    numTrials: 'numTrials',
+    numSpins: 'numSpins',
+    startingBalance: 'startingBalance',
+  },
+  controllers: {
+    games: 'games',
+    search: 'search'
   },
   pagination: {
     // Default page for pagination

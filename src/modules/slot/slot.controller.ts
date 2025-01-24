@@ -40,7 +40,10 @@ export class SlotController {
    * @returns {object} The result of the simulation, including the final balance and details of each spin.
    */
   @Post(appConfig.slotRoutes.simulate)
-  simulate(@Body('numSpins') numSpins: number, @Body('startingBalance') startingBalance: number) {
+  simulate(
+    @Body(appConfig.slotRoutes.numSpins) numSpins: number, 
+    @Body(appConfig.slotRoutes.startingBalance) startingBalance: number
+  ) {
     if (!numSpins || !startingBalance || startingBalance <= 0 || numSpins <= 0) {
       return {
         success: false,
@@ -66,9 +69,9 @@ export class SlotController {
    */
   @Post(appConfig.slotRoutes.monteCarlo)
   runMonteCarlo(
-    @Body('numTrials') numTrials: number,
-    @Body('numSpins') numSpins: number,
-    @Body('startingBalance') startingBalance: number,
+    @Body(appConfig.slotRoutes.numTrials) numTrials: number,
+    @Body(appConfig.slotRoutes.numSpins) numSpins: number,
+    @Body(appConfig.slotRoutes.startingBalance) startingBalance: number,
   ) {
     if (!numTrials || !numSpins || !startingBalance || numTrials <= 0 || numSpins <= 0 || startingBalance <= 0) {
       return {
@@ -77,7 +80,11 @@ export class SlotController {
       };
     }
 
-    const simulationResult = this.slotService.monteCarloSimulation(numTrials, numSpins, startingBalance);
+    const simulationResult = this.slotService.monteCarloSimulation(
+      numTrials, 
+      numSpins, 
+      startingBalance
+    );
 
     return {
       success: true,

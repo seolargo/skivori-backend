@@ -1,4 +1,5 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
+import { SlotInterface } from './interfaces/interfaces';
 
 /**
  * Service for managing slot machine operations, including spins, balance management,
@@ -102,7 +103,7 @@ export class SlotService {
    */
   public simulateSpins(numSpins: number, startingBalance: number) {
     let balance = startingBalance;
-    const spinResults: { spinNumber: number; result: string[]; reward: number; balance: number }[] = [];
+    const spinResults: SlotInterface[] = [];
 
     for (let i = 1; i <= numSpins; i++) {
       balance--;
@@ -135,9 +136,14 @@ export class SlotService {
    * @param {number} numTrials - The number of trials to run.
    * @param {number} numSpins - The number of spins per trial.
    * @param {number} startingBalance - The initial balance for each trial.
+   * 
    * @returns {object} Summary statistics of the simulation, including average rewards, bankruptcy rate, and reward distribution.
    */
-  public monteCarloSimulation(numTrials: number, numSpins: number, startingBalance: number) {
+  public monteCarloSimulation(
+    numTrials: number, 
+    numSpins: number, 
+    startingBalance: number
+  ) {
     let totalReward = 0;
     let totalSpins = 0;
     let bankruptcies = 0;

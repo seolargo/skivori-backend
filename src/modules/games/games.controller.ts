@@ -4,11 +4,12 @@ import { GamesService } from './games.service';
 import { GetGamesQueryDto } from './dto/get-games-query.dto';
 import { ValidationPipe } from '../../pipes/validation.pipe';
 import { appConfig } from '../../config/app.config';
+import { GetGamesResult } from './interfaces/interfaces';
 
 /**
  * Controller for handling games-related API endpoints.
  */
-@Controller('games')
+@Controller(appConfig.controllers.games)
 export class GamesController {
   private readonly logger = new Logger(GamesController.name);
 
@@ -30,8 +31,12 @@ export class GamesController {
   @UsePipes(new ValidationPipe())
   getAllGames(
     @Query() query: GetGamesQueryDto,
-  ): { total: number; page: number; limit: number; paginatedGames: any[] } {
-    const { search = '', page = appConfig.pagination.defaultPage, limit = appConfig.pagination.defaultLimit } = query;
+  ): GetGamesResult {
+    const { 
+      search = '', 
+      page = appConfig.pagination.defaultPage, 
+      limit = appConfig.pagination.defaultLimit 
+    } = query;
 
     // Log the action for debugging purposes
     this.logger.log('Fetching all games with default parameters.');
@@ -46,13 +51,17 @@ export class GamesController {
    * @param {GetGamesQueryDto} query - The search parameters provided in the request body.
    * @returns {object} - Returns the total count, current page, limit, and the paginated list of matching games.
    */
-  @Post('search')
+  @Post(appConfig.controllers.search)
   @UseInterceptors(CacheInterceptor)
   @UsePipes(new ValidationPipe())
   searchGames(
     @Body() query: GetGamesQueryDto,
-  ): { total: number; page: number; limit: number; paginatedGames: any[] } {
-    const { search = '', page = appConfig.pagination.defaultPage, limit = appConfig.pagination.defaultLimit } = query;
+  ): GetGamesResult {
+    const { 
+      search = '', 
+      page = appConfig.pagination.defaultPage, 
+      limit = appConfig.pagination.defaultLimit 
+    } = query;
 
     // Log the query parameters for debugging purposes
     this.logger.log(`Search: ${search}, Page: ${page}, Limit: ${limit}`);
