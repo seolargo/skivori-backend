@@ -1,7 +1,5 @@
 import { Module, MiddlewareConsumer, NestModule, RequestMethod } from '@nestjs/common';
-
 import { join } from 'path';
-
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 
 // Modules Imports
@@ -30,6 +28,7 @@ import { ResponseTransformInterceptor } from '@common/interceptors/response-tran
 import { ErrorHandlingInterceptor } from '@common/interceptors/error-handling.interceptor';
 import { TimeoutInterceptor } from '@common/interceptors/timeout.interceptor';
 import { CachingInterceptor } from '@common/interceptors/caching.interceptor';
+import { GlobalParamValidationInterceptor } from '@common/interceptors/param-validation.interceptor';
 
 // Filter Imports
 import { HttpErrorFilter } from '@common/filters/http-error.filter';
@@ -74,6 +73,10 @@ import { RolesGuard } from '@common/guards/roles.guard';
       provide: APP_FILTER,
       useClass: HttpErrorFilter, // Exception filter
     },
+    {
+      provide: APP_FILTER,
+      useClass: AllExceptionsFilter,
+    },
     /*
     // Register global guards
     {
@@ -107,18 +110,13 @@ import { RolesGuard } from '@common/guards/roles.guard';
       useClass: CachingInterceptor, // Implements caching
     },
     {
-      provide: APP_FILTER,
-      useClass: AllExceptionsFilter,
-    },
-    {
-      provide: APP_FILTER,
-      useClass: HttpErrorFilter,
+      provide: APP_INTERCEPTOR,
+      useClass: GlobalParamValidationInterceptor, // Add this line for global parameter validation
     },
   ],
   controllers: [],
-  exports: [JwtModule]
+  exports: [JwtModule],
 })
-
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
@@ -139,7 +137,7 @@ export class AppModule implements NestModule {
         { path: '/slot/spin', method: RequestMethod.POST },
         { path: '/slot/simulate', method: RequestMethod.POST },
         { path: '/slot/monte-carlo', method: RequestMethod.POST },
-        { path: '/slot/reset', method: RequestMethod.POST }
+        { path: '/slot/reset', method: RequestMethod.POST },
       )
       .forRoutes('*'); // Apply to all routes
   }
