@@ -2,7 +2,7 @@ import { UseInterceptors, Controller, Get, Post, Query, Body, Logger, UsePipes }
 import { CacheInterceptor } from '@nestjs/cache-manager';
 import { GamesService } from './games.service';
 import { GetGamesQueryDto } from './dto/get-games-query.dto';
-import { ValidationPipe } from './validation.pipe';
+import { ValidationPipe } from '../../pipes/validation.pipe';
 import { appConfig } from '../../config/app.config';
 
 /**

@@ -1,15 +1,18 @@
 import { Module, MiddlewareConsumer, NestModule, RequestMethod } from '@nestjs/common';
+
+import { join } from 'path';
+
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+
+// Modules Imports
+import { JwtModule } from '@nestjs/jwt';
+import { GamesModule } from './modules/games/games.module';
+import { EventEmitterModule } from '@nestjs/event-emitter';
+import { SlotModule } from './modules/slot/slot.module';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { CacheModule } from '@nestjs/cache-manager';
 import { ConfigModule } from '@nestjs/config';
 import { ServeStaticModule } from '@nestjs/serve-static';
-import { join } from 'path';
-import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
-import { JwtModule } from '@nestjs/jwt';
-
-import { GamesModule } from './modules/games/games.module';
-
-import { EventEmitterModule } from '@nestjs/event-emitter';
 
 // Middleware Imports
 import { LoggerMiddleware } from '@common/middlewares/logger.middleware';
@@ -35,8 +38,6 @@ import { AllExceptionsFilter } from '@common/filters/all-exceptions.filter';
 // Guard Imports
 import { AuthGuard } from '@common/guards/auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
-
-import { SlotModule } from './modules/slot/slot.module';
 
 @Module({
   imports: [

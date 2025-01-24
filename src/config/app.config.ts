@@ -17,9 +17,22 @@ export const appConfig = {
     // 24 hours in milliseconds
     cacheRefreshInterval: 24 * 60 * 60 * 1000, 
   },
+  slotRoutes: {
+    // Route for spinning the slot machine
+    spin: 'spin', 
+    // Route for simulating spins
+    simulate: 'simulate', 
+    // Route for Monte Carlo simulation
+    monteCarlo: 'monte-carlo', 
+    // Route for resetting the balance
+    reset: 'reset', 
+    slot: 'slot'
+  },
   pagination: {
-    defaultPage: parseInt(process.env.DEFAULT_PAGE || '1', 10), // Default page for pagination
-    defaultLimit: parseInt(process.env.DEFAULT_LIMIT || '10', 10), // Default limit for pagination
+    // Default page for pagination
+    defaultPage: parseInt(process.env.DEFAULT_PAGE || '1', 10), 
+    // Default limit for pagination
+    defaultLimit: parseInt(process.env.DEFAULT_LIMIT || '10', 10), 
   },
   events: {
     // Event emitted after cache refresh

@@ -1,16 +1,24 @@
-// slot.controller.ts
 import { Controller, Post, HttpException, HttpStatus, Body } from '@nestjs/common';
 import { SlotService } from './slot.service';
+import { appConfig } from '../../config/app.config';
 
-/*
-  http://localhost:3001/api/slot/spin
-*/
-
-@Controller('slot')
+/**
+ * Controller for managing slot machine-related operations.
+ * 
+ * Provides endpoints for spinning the slot machine, simulating spins,
+ * running Monte Carlo simulations, and resetting the user balance.
+ */
+@Controller(appConfig.slotRoutes.slot)
 export class SlotController {
   constructor(private readonly slotService: SlotService) {}
 
-  @Post('spin')
+  /**
+   * Endpoint to perform a single spin of the slot machine.
+   *
+   * @returns {object} The result of the spin, including the spin result, reward, and updated balance.
+   * @throws {HttpException} If there is an error during the spin process.
+   */
+  @Post(appConfig.slotRoutes.spin)
   spinSlot() {
     try {
       const result = this.slotService.spin();
@@ -24,33 +32,14 @@ export class SlotController {
     }
   }
 
-  /*
-    http://localhost:3001/api/slot/simulate
-
-    {
-      "numSpins": 50,
-      "startingBalance": 20
-    }
-
-    {
-      "success": true,
-      "message": "Simulation completed successfully.",
-      "data": {
-        "finalBalance": 30,
-        "spinResults": [
-          {
-            "spinNumber": 1,
-            "result": ["lemon", "cherry", "lemon"],
-            "reward": 0,
-            "balance": 19
-          },
-          ...
-        ]
-      }
-    }
-  */
-
-  @Post('simulate')
+  /**
+   * Endpoint to simulate multiple spins of the slot machine.
+   *
+   * @param {number} numSpins - The number of spins to simulate.
+   * @param {number} startingBalance - The starting balance for the simulation.
+   * @returns {object} The result of the simulation, including the final balance and details of each spin.
+   */
+  @Post(appConfig.slotRoutes.simulate)
   simulate(@Body('numSpins') numSpins: number, @Body('startingBalance') startingBalance: number) {
     if (!numSpins || !startingBalance || startingBalance <= 0 || numSpins <= 0) {
       return {
@@ -67,13 +56,20 @@ export class SlotController {
     };
   }
 
-  @Post('monte-carlo')
+  /**
+   * Endpoint to perform a Monte Carlo simulation on the slot machine.
+   *
+   * @param {number} numTrials - The number of trials to run.
+   * @param {number} numSpins - The number of spins per trial.
+   * @param {number} startingBalance - The starting balance for each trial.
+   * @returns {object} The result of the simulation, including statistics such as average rewards, bankruptcy rate, and reward distribution.
+   */
+  @Post(appConfig.slotRoutes.monteCarlo)
   runMonteCarlo(
     @Body('numTrials') numTrials: number,
     @Body('numSpins') numSpins: number,
     @Body('startingBalance') startingBalance: number,
   ) {
-    // Validate input parameters
     if (!numTrials || !numSpins || !startingBalance || numTrials <= 0 || numSpins <= 0 || startingBalance <= 0) {
       return {
         success: false,
@@ -81,7 +77,6 @@ export class SlotController {
       };
     }
 
-    // Call the service method
     const simulationResult = this.slotService.monteCarloSimulation(numTrials, numSpins, startingBalance);
 
     return {
@@ -90,7 +85,12 @@ export class SlotController {
     };
   }
 
-  @Post('reset')
+  /**
+   * Endpoint to reset the user's balance to its initial value.
+   *
+   * @returns {object} A message confirming the balance reset and the new balance value.
+   */
+  @Post(appConfig.slotRoutes.reset)
   resetBalance() {
     return this.slotService.resetBalance();
   }

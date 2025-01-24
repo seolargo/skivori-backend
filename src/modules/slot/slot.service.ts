@@ -1,9 +1,16 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 
+/**
+ * Service for managing slot machine operations, including spins, balance management,
+ * simulations, and statistical analysis using Monte Carlo methods.
+ */
 @Injectable()
 export class SlotService {
-  private readonly INITIAL_BALANCE = 20; // Define the initial balance
-  private userBalance = this.INITIAL_BALANCE; // Initialize user balance
+  // Define the initial balance
+  private readonly INITIAL_BALANCE = 20; 
+
+  // Initialize user balance with the initial balance
+  private userBalance = this.INITIAL_BALANCE; 
 
   private readonly reels = [
     ["cherry", "lemon", "apple", "lemon", "banana", "banana", "lemon", "lemon"],
@@ -21,10 +28,21 @@ export class SlotService {
     "3lemon": 3,
   };
 
+  /**
+   * Spins the slot machine reels and returns the result.
+   *
+   * @returns {string[]} The result of the spin as an array of strings representing symbols.
+   */
   private spinReels(): string[] {
     return this.reels.map((reel) => reel[Math.floor(Math.random() * reel.length)]);
   }
 
+  /**
+   * Calculates the reward based on the result of a spin.
+   *
+   * @param {string[]} result - The result of the spin.
+   * @returns {number} The reward based on the spin result.
+   */
   private calculateReward(result: string[]): number {
     let reward = 0;
 
@@ -38,10 +56,13 @@ export class SlotService {
   }
 
   /**
-   * Resets the user balance to the initial balance.
+   * Resets the user's balance to the initial balance.
+   *
+   * @returns {object} An object containing the reset balance and a success message.
    */
   resetBalance() {
-    this.userBalance = this.INITIAL_BALANCE; // Reset balance to the initial value
+    this.userBalance = this.INITIAL_BALANCE;
+    
     return {
       message: 'Balance has been reset successfully.',
       balance: this.userBalance,
@@ -49,7 +70,10 @@ export class SlotService {
   }
 
   /**
-   * Handles a spin and calculates the updated balance.
+   * Performs a single spin operation and updates the user's balance.
+   *
+   * @throws {HttpException} If the user has insufficient balance to spin.
+   * @returns {object} The result of the spin, including the spin result, reward, and updated balance.
    */
   spin() {
     if (this.userBalance <= 0) {
@@ -57,34 +81,36 @@ export class SlotService {
     }
 
     const spinCost = 1;
-    this.userBalance -= spinCost; // Deduct spin cost
-    const spinResult = this.spinReels(); // Get spin result
-    const reward = this.calculateReward(spinResult); // Calculate reward
-    const updatedBalance = this.userBalance + reward; // Explicitly calculate updated balance
-    this.userBalance = updatedBalance; // Update user balance
+    this.userBalance -= spinCost;
+    const spinResult = this.spinReels();
+    const reward = this.calculateReward(spinResult);
+    this.userBalance += reward;
 
     return {
       spinResult,
       reward,
-      updatedBalance, // Return the updated balance
+      updatedBalance: this.userBalance,
     };
   }
 
   /**
-   * Simulates multiple spins for testing purposes.
+   * Simulates multiple spins to analyze outcomes over a set number of spins.
+   *
+   * @param {number} numSpins - The number of spins to simulate.
+   * @param {number} startingBalance - The initial balance for the simulation.
+   * @returns {object} The final balance and details of each spin.
    */
   public simulateSpins(numSpins: number, startingBalance: number) {
     let balance = startingBalance;
     const spinResults: { spinNumber: number; result: string[]; reward: number; balance: number }[] = [];
 
     for (let i = 1; i <= numSpins; i++) {
-      balance--; // Deduct spin cost
+      balance--;
 
-      const spinResult = this.spinReels(); // Spin the reels
-      const reward = this.calculateReward(spinResult); // Calculate reward
-      balance += reward; // Update balance with reward
+      const spinResult = this.spinReels();
+      const reward = this.calculateReward(spinResult);
+      balance += reward;
 
-      // Store spin result
       spinResults.push({
         spinNumber: i,
         result: spinResult,
@@ -92,7 +118,6 @@ export class SlotService {
         balance,
       });
 
-      // Stop simulation if balance is exhausted
       if (balance <= 0) {
         break;
       }
@@ -100,12 +125,17 @@ export class SlotService {
 
     return {
       finalBalance: balance,
-      spinResults: spinResults,
+      spinResults,
     };
   }
 
   /**
-   * Performs a Monte Carlo simulation to analyze the slot machine's behavior.
+   * Performs a Monte Carlo simulation to analyze the slot machine's behavior over multiple trials.
+   *
+   * @param {number} numTrials - The number of trials to run.
+   * @param {number} numSpins - The number of spins per trial.
+   * @param {number} startingBalance - The initial balance for each trial.
+   * @returns {object} Summary statistics of the simulation, including average rewards, bankruptcy rate, and reward distribution.
    */
   public monteCarloSimulation(numTrials: number, numSpins: number, startingBalance: number) {
     let totalReward = 0;
@@ -125,14 +155,13 @@ export class SlotService {
         }
 
         spins++;
-        balance--; // Deduct 1 coin for the spin
+        balance--;
 
-        const spinResult = this.spinReels(); // Spin the reels
-        const reward = this.calculateReward(spinResult); // Calculate reward
+        const spinResult = this.spinReels();
+        const reward = this.calculateReward(spinResult);
         balance += reward;
         totalReward += reward;
 
-        // Track reward distribution
         if (reward > 0) {
           rewardDistribution[reward] = (rewardDistribution[reward] || 0) + 1;
         }
