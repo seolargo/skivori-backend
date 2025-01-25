@@ -57,4 +57,6 @@ These logs show the startup process of a NestJS application. They include initia
 ## Future Considerations
 Even though guards or roles/user decorators are implemented, they are not currently used in the application as the project requirements do not specify their use. However, they can be utilized in the future. Other methods in the security section or other parts of NestJS are known but not implemented for simplicity.
 
-It starts with npm run start:dev
+It starts with "npm run start:dev"
+
+The performance optimization are made when necessary. Terminal screen can be obserbed to see the results.
