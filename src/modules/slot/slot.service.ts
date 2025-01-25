@@ -92,23 +92,15 @@ export class SlotService {
   
     // Deduct the spin cost from the user's balance
     this.userBalance -= spinCost;
-    
-    console.log('userBalance', this.userBalance);
 
     // Generate the result of spinning the reels
     const spinResult = this.spinReels();
-
-    console.log('spinResult', spinResult);
   
     // Calculate the reward based on the spin result
     const reward = this.calculateReward(spinResult);
-  
-    console.log('reward', reward);
 
     // Add the reward to the user's balance
     this.userBalance += reward;
-
-    console.log('userBalance', this.userBalance);
   
     // Return the spin result, reward, and updated balance
     return {

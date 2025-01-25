@@ -1,5 +1,6 @@
 import { Handler } from '@netlify/functions';
 import { SlotService } from '../../src/modules/slot/slot.service';
+import { getCommonHeaders } from '../../src/common/utils/utils';
 
 // Initialize SlotService
 const slotService = new SlotService();
@@ -9,11 +10,7 @@ export const handler: Handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') {
     return {
       statusCode: 200,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Content-Type',
-        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      },
+      headers: getCommonHeaders(),
       body: '',
     };
   }
@@ -24,11 +21,7 @@ export const handler: Handler = async (event) => {
 
     return {
       statusCode: 200,
-      headers: {
-        'Access-Control-Allow-Origin': '*', // Allow all origins
-        'Access-Control-Allow-Headers': 'Content-Type',
-        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      },
+      headers: getCommonHeaders(),
       body: JSON.stringify(result),
     };
   } catch (error) {
@@ -36,11 +29,7 @@ export const handler: Handler = async (event) => {
 
     return {
       statusCode: 400,
-      headers: {
-        'Access-Control-Allow-Origin': '*', // Ensure CORS headers are sent even on error
-        'Access-Control-Allow-Headers': 'Content-Type',
-        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      },
+      headers: getCommonHeaders(),
       body: JSON.stringify({ message: error.message || 'An unknown error occurred' }),
     };
   }

@@ -5,19 +5,17 @@ import { GamesService } from '../../src/modules/games/games.service';
 import { ValidationPipe } from '../../src/pipes/validation.pipe';
 import { GetGamesQueryDto } from '../../src/modules/games/dto/get-games-query.dto';
 import { Logger } from '@nestjs/common';
+import { getCommonHeaders } from '../../src/common/utils/utils';
 
-let app; // Cache the NestJS app instance
+// Cache the NestJS app instance
+let app; 
 
 export const handler: Handler = async (event) => {
   // Handle preflight OPTIONS request for CORS
   if (event.httpMethod === 'OPTIONS') {
     return {
       statusCode: 200,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Content-Type',
-        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      },
+      headers: getCommonHeaders(),
       body: '',
     };
   }
@@ -25,9 +23,13 @@ export const handler: Handler = async (event) => {
   try {
     // Bootstrap the NestJS app if not already initialized
     if (!app) {
-      app = await NestFactory.createApplicationContext(AppModule, {
-        logger: false, // Optional: Disable logger for performance
-      });
+      app = await NestFactory.createApplicationContext(
+        AppModule, 
+        {
+          // Optional: Disable logger for performance
+          logger: false, 
+        }
+      );
     }
 
     const logger = new Logger(GamesService.name);
@@ -45,18 +47,21 @@ export const handler: Handler = async (event) => {
     logger.log(`Searching for games with query: ${JSON.stringify(query)}`);
 
     // Validate body parameters
-    new ValidationPipe().transform(query, { type: 'body' });
+    new ValidationPipe().transform(
+      query, 
+      { type: 'body' }
+    );
 
     // Fetch games using the service
-    const result = gamesService.getGames(search, +page, +limit);
+    const result = gamesService.getGames(
+      search, 
+      +page, 
+      +limit
+    );
 
     return {
       statusCode: 200,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Content-Type',
-        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      },
+      headers: getCommonHeaders(),
       body: JSON.stringify(result),
     };
   } catch (error) {
@@ -64,11 +69,7 @@ export const handler: Handler = async (event) => {
 
     return {
       statusCode: 400,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Content-Type',
-        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      },
+      headers: getCommonHeaders(),
       body: JSON.stringify({ message: error.message }),
     };
   }
