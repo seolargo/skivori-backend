@@ -1,8 +1,9 @@
 [build]
   command = "npm ci --force && npm run build"
-  publish = "dist"
+  publish = "dist"  # Replace with your build output directory
 
 [build.environment]
+  NODE_VERSION = "18.20.6"  # Explicitly set Node.js version
   GO_VERSION = "none"
   PHP_VERSION = "none"
   RUBY_VERSION = "none"
