@@ -6,7 +6,6 @@
   NODE_VERSION = "18.20.6"  # Explicitly set Node.js version
   GO_VERSION = "none"
   PHP_VERSION = "none"
-  RUBY_VERSION = "none"
 
 [build.caching]
   directory = "node_modules"
