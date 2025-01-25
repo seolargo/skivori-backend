@@ -4,7 +4,6 @@
 
 [build.environment]
   NODE_VERSION = "18.20.6"  # Explicitly set Node.js version
-  GO_VERSION = "none"
   PHP_VERSION = "none"
 
 [build.caching]
