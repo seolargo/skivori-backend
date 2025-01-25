@@ -87,30 +87,34 @@ export class SlotService {
     if (this.userBalance <= 0) {
       throw new HttpException('Insufficient balance to spin!', HttpStatus.BAD_REQUEST);
     }
-
-    // Define the cost of a single spin
+  
     const spinCost = 1;
-
+  
     // Deduct the spin cost from the user's balance
     this.userBalance -= spinCost;
+    
+    console.log('userBalance', this.userBalance);
 
     // Generate the result of spinning the reels
     const spinResult = this.spinReels();
 
+    console.log('spinResult', spinResult);
+  
     // Calculate the reward based on the spin result
     const reward = this.calculateReward(spinResult);
+  
+    console.log('reward', reward);
 
     // Add the reward to the user's balance
     this.userBalance += reward;
 
-    // Return the spin result, reward, and updated balance to the caller
+    console.log('userBalance', this.userBalance);
+  
+    // Return the spin result, reward, and updated balance
     return {
-      // The outcome of the spin
-      spinResult, 
-      // The reward earned from the spin
-      reward, 
-      // The user's balance after the spin
-      updatedBalance: this.userBalance, 
+      spinResult,
+      reward,
+      updatedBalance: this.userBalance, // Return the updated user balance
     };
   }
 

@@ -14,10 +14,10 @@ export const appConfig = {
   },
   files: {
     // Path to the games data file
-    gamesFilePath: path.join(
-      __dirname, 
-      '../../mocks/game-data.json'
-    ), 
+    gamesFilePath: path.resolve(
+      __dirname,
+      '..', '..', '..', 'src', 'mocks', 'game-data.json' // Adjust path based on the project structure
+    ),
   },
   schedule: {
     // 24 hours in milliseconds

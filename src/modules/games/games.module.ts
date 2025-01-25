@@ -20,5 +20,6 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
   ],
   controllers: [GamesController],
   providers: [GamesService, GameListener],
+  exports: [GamesService],
 })
 export class GamesModule {}

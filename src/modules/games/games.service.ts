@@ -1,8 +1,9 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit, Inject  } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import * as fs from 'fs';
 import NodeCache from 'node-cache';
 import { appConfig } from '../../config/app.config'; 
+import * as path from 'path';
 import { GetGamesResult } from './interfaces/interfaces';
 
 /**
@@ -11,6 +12,8 @@ import { GetGamesResult } from './interfaces/interfaces';
 @Injectable()
 export class GamesService implements OnModuleInit {
   private readonly logger = new Logger(GamesService.name);
+
+  private readonly gamesFilePath: string;
 
   // Cached list of games
   private cachedGames: any[] = [];
@@ -21,9 +24,17 @@ export class GamesService implements OnModuleInit {
   // Searchable index for faster querying
   private gameIndex: Map<string, any[]> = new Map();
 
-  constructor(private readonly eventEmitter: EventEmitter2) {
+  constructor(@Inject(EventEmitter2) private readonly eventEmitter: EventEmitter2) {
+    // Use process.cwd() for dynamic resolution in Netlify
+    this.gamesFilePath = path.resolve(
+      process.cwd(),
+      'src',
+      'mocks',
+      'game-data.json'
+    );
+
     // Load games at startup
-    this.loadGamesFromFile();
+    this.loadGamesFromFile();    
   }
 
   /**
@@ -33,7 +44,7 @@ export class GamesService implements OnModuleInit {
   private loadGamesFromFile(): void {
     try {
       // Read games data from the file
-      const data = fs.readFileSync(appConfig.files.gamesFilePath, 'utf8');
+      const data = fs.readFileSync(this.gamesFilePath, 'utf8');
 
       // Parse the data as JSON
       this.cachedGames = JSON.parse(data);

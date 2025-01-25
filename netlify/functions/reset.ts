@@ -1,9 +1,8 @@
 import { Handler } from '@netlify/functions';
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from '../../src/app.module';
-import { GamesService } from '../../src/modules/games/games.service';
+import { SlotService } from '../../src/modules/slot/slot.service';
 
-let app; // Cache the NestJS app instance
+// Initialize SlotService
+const slotService = new SlotService();
 
 export const handler: Handler = async (event) => {
   // Handle preflight OPTIONS request for CORS
@@ -20,18 +19,8 @@ export const handler: Handler = async (event) => {
   }
 
   try {
-    // Bootstrap NestJS app if not already initialized
-    if (!app) {
-      app = await NestFactory.createApplicationContext(AppModule);
-    }
-
-    const gamesService = app.get(GamesService);
-
-    // Extract query parameters
-    const { search = '', page = 1, limit = 10 } = event.queryStringParameters || {};
-
-    // Fetch games using the service
-    const result = gamesService.getGames(search, +page, +limit);
+    // Call the resetBalance method from SlotService
+    const result = slotService.resetBalance();
 
     return {
       statusCode: 200,
@@ -43,15 +32,16 @@ export const handler: Handler = async (event) => {
       body: JSON.stringify(result),
     };
   } catch (error) {
-    console.error('Error in getAllGames function:', error.message);
+    console.error('Error in resetBalance function:', error.message);
+
     return {
-      statusCode: 500,
+      statusCode: 400,
       headers: {
-        'Access-Control-Allow-Origin': '*', // Allow all origins
+        'Access-Control-Allow-Origin': '*', // Ensure CORS headers are sent even on error
         'Access-Control-Allow-Headers': 'Content-Type',
         'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
       },
-      body: JSON.stringify({ message: 'Internal server error' }),
+      body: JSON.stringify({ message: error.message || 'An unknown error occurred' }),
     };
   }
 };

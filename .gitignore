@@ -49,3 +49,6 @@ coverage/
 
 # Others
 *.log.*
+
+# Local Netlify folder
+.netlify
