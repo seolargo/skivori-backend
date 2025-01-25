@@ -7,3 +7,16 @@
 
 [build.caching]
   directory = "node_modules"
+
+[functions]
+  directory = "netlify/functions"
+
+[[redirects]]
+  from = "/get-all-games"
+  to = "/.netlify/functions/getAllGames"
+  status = 200
+
+[[redirects]]
+  from = "/search-games"
+  to = "/.netlify/functions/searchGames"
+  status = 200
