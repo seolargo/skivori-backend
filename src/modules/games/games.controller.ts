@@ -8,6 +8,8 @@ import { GetGamesResult } from './interfaces/interfaces';
 
 /**
  * Controller for handling games-related API endpoints.
+ * 
+ * The controller methods (getAllGames and searchGames) act as "handlers" that call the corresponding service methods from GamesService.
  */
 @Controller(appConfig.controllers.games)
 export class GamesController {

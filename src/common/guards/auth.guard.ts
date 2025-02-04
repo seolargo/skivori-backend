@@ -2,7 +2,7 @@ import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 
 /**
- * An authentication guard that validates JWT tokens.
+ * An authentication guard that "validates JWT tokens".
  * 
  * This guard intercepts requests, checks for a valid `Authorization` header, verifies the provided JWT token,
  * and attaches the decoded token payload to the request object for further use in the application.

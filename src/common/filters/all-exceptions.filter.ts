@@ -3,9 +3,9 @@ import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus } from
 /**
  * A global exception filter to handle all uncaught exceptions in the application.
  * 
- * This filter catches both HTTP exceptions and unknown exceptions, providing a unified
- * structure for error responses sent to the client. It logs the exception details to the
- * console for debugging and returns an appropriate HTTP response.
+ * This filter catches both "HTTP exceptions" and "unknown exceptions", 
+ * providing "a unified structure for error responses" sent to the client. 
+ * It logs the exception details to the console for debugging and returns an appropriate HTTP response.
  * 
  * @example
  * ```typescript

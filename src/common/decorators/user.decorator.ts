@@ -1,10 +1,12 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 
 /**
- * Custom decorator to extract the `user` object from the HTTP request.
  * 
- * This decorator can be used in controllers to access the authenticated user's details
- * without manually extracting it from the request object.
+ * The @User() decorator extracts the authenticated user object from the HTTP request, 
+ * allowing easy access to user details in controller methods without manually referencing req.user.
+ * 
+ * Without @User(): You’d manually do req.user in every route.
+ * With @User(): Clean, reusable, and reduces boilerplate code.
  * 
  * @example
  * ```typescript

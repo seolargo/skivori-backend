@@ -193,7 +193,8 @@ export class SlotService {
       let spins = 0; 
 
       // Perform spins until the balance is exhausted or the maximum spins are reached.
-      while (spins < numSpins && balance > 0) {
+      //while (spins < numSpins && balance > 0) {
+      while (spins < numSpins) {
         // Increment the spin counter.
         spins++; 
         // Deduct the spin cost from the balance.

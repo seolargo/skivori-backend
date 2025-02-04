@@ -1,11 +1,8 @@
 import { SetMetadata } from '@nestjs/common';
 
 /**
- * Custom decorator to define roles required for accessing a route or resource.
- * 
- * This decorator can be applied to controller methods or classes to specify the roles
- * that are allowed to access the resource. The `roles` metadata can then be checked
- * by a guard to enforce role-based access control.
+ * The @Roles() decorator attaches "role-based metadata" to "routes" or "controllers", 
+ * which can be checked by guards like "RolesGuard" to enforce access control.
  * 
  * @example
  * ```typescript

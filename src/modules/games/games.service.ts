@@ -37,6 +37,18 @@ export class GamesService implements OnModuleInit {
     this.loadGamesFromFile();    
   }
 
+  /*
+      Game Index
+
+      Keyword         Games
+    1 dead            ['Legacy of Games'] 
+    2 of              ['Legacy of Dead', 'Lord Merlin and the Lady of the Lake', 'Carol of the Elves', 'Vault of Fortune', 'Tome of Madness']
+    3 legacy          ['Legacy of Dead']
+    4 ...
+    5
+    6
+  */
+
   /**
    * Loads the games data from a JSON file and builds a searchable index.
    * Emits an event after loading the data.
@@ -74,19 +86,18 @@ export class GamesService implements OnModuleInit {
   private buildGameIndex(): void {
     this.logger.log('Building search index...');
 
-    this.cachedGames
-      .forEach((game) => {
-        const title = game.title?.toLowerCase();
-        if (!title) return;
+    this.cachedGames.forEach((game) => {
+      const title = game.title?.toLowerCase();
+      if (!title) return;
 
-        // Split the title into words
-        const words = title.split(' ');
+      // Split the title into words
+      const words = title.split(' ');
 
-        this.addGameToIndex(
-          words, 
-          this.gameIndex, 
-          game
-        );
+      this.addGameToIndex(
+        words, 
+        this.gameIndex, 
+        game
+      );
     });
 
     this.logger.log('Search index built successfully.');
@@ -98,8 +109,29 @@ export class GamesService implements OnModuleInit {
    * @param {string[]} words - An array of words to be used as keys in the index.
    * @param {Map<string, any[]>} gameIndex - The index where games are stored based on their keywords.
    * @param {any} game - The game object to be indexed.
+   * 
+   * @example
+   * // Initialize an empty game index
+   * const gameIndex = new Map();
+   *
+   * // Sample game data
+   * const game = { id: 1, title: 'Legacy of Dead' };
+   *
+   * // Split the title into words
+   * const words = game.title.toLowerCase().split(' ');
+   *
+   * // Add the game to the index
+   * addGameToIndex(words, gameIndex, game);
+   *
+   * console.log(gameIndex);
+   * // Output:
+   * // Map {
+   * //   'legacy' => [{ id: 1, title: 'Legacy of Dead' }],
+   * //   'of' => [{ id: 1, title: 'Legacy of Dead' }],
+   * //   'dead' => [{ id: 1, title: 'Legacy of Dead' }]
+   * // }
   */
-  addGameToIndex(
+  private addGameToIndex(
     words: string[], 
     gameIndex: Map<string, any[]>, 
     game: any
@@ -122,6 +154,7 @@ export class GamesService implements OnModuleInit {
    * @param {string} searchQuery - The search query to filter games.
    * @param {number} page - The page number for pagination.
    * @param {number} limit - The number of games per page.
+   * 
    * @returns {GetGamesResult} An object containing the total games, current page, limit, and paginated games.
    */
   getGames(
@@ -181,21 +214,43 @@ export class GamesService implements OnModuleInit {
   }
 
   /**
-   * Filters games from the index based on the query string.
-   *
-   * @param {string} query - The search query string.
-   * @param {Map<string, any[]>} gameIndex - The index containing game keywords mapped to game arrays.
-   * @returns {any[]} - The filtered list of games matching the query.
+    * Filters games from the index based on the query string.
+    *
+    * @param {string} query - The search query string.
+    * @param {Map<string, any[]>} gameIndex - The index containing game keywords mapped to game arrays.
+    * 
+    * @returns {any[]} - The filtered list of games matching the query.
+    * 
+    * @example
+    * const gameIndex = new Map();
+    * gameIndex.set('legacy', [{ id: 1, title: 'Legacy of Dead' }]);
+    * gameIndex.set('dead', [{ id: 1, title: 'Legacy of Dead' }]);
+    * gameIndex.set('wild', [{ id: 2, title: 'Wild Wild Riches' }, { id: 3, title: 'Wild West Gold' }]);
+    * gameIndex.set('fortune', [{ id: 4, title: 'Nero\'s Fortune' }, { id: 5, title: 'Vault of Fortune' }]);
+    *
+    * // Search for games containing the keyword 'wild'
+    * const result = filterGamesFromIndex('wild', gameIndex);
+    * console.log(result);
+    * // Output:
+    * // [
+    * //   { id: 2, title: 'Wild Wild Riches' },
+    * //   { id: 3, title: 'Wild West Gold' }
+    * // ]
    */
   filterGamesFromIndex(query: string, gameIndex: Map<string, any[]>): any[] {
+    // Initialize an empty array to store the filtered games
     let filteredGames: any[] = [];
     
+    // Iterate over each entry in the game index (key: keyword, value: array of games)
     gameIndex.forEach((games, key) => {
+      // Check if the current keyword contains the search query (for partial matching)
       if (key.includes(query)) {
+        // If a match is found, concatenate the matching games to the filteredGames array
         filteredGames = filteredGames.concat(games);
       }
     });
 
+    // Return the final list of filtered games that match the query
     return filteredGames;
   }
 
@@ -205,6 +260,9 @@ export class GamesService implements OnModuleInit {
   onModuleInit(): void {
     this.startDailyCacheRefresh();
   }
+
+  // This code is designed to automatically refresh the cache containing game data every day at midnight. 
+  // It ensures that the cached data stays up-to-date without requiring manual intervention.
 
   /**
    * Schedules a daily cache refresh at midnight.
